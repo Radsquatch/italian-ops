@@ -944,6 +944,13 @@
       background: var(--danger);
     }
 
+
+    /* Sync panel auto-collapse (added 2026-11-11): when connected, the
+       passphrase row and hint hide; only the status pill stays visible.
+       Clicking the pill toggles the panel open/closed. */
+    #syncSection.collapsed .sync-controls,
+    #syncSection.collapsed .sync-hint { display: none; }
+    #syncSection .sync-status-pill { cursor: pointer; }
     .sync-hint {
       font-family: var(--mono);
       font-size: 0.7rem;
@@ -6007,6 +6014,27 @@
     if (syncMeta.hash) {
       pullSyncState();
     }
+  </script>
+
+  <script>
+    // Sync panel collapse behavior: collapse when connected, expand when
+    // not, click the status pill to toggle. Visibility only - the sync
+    // engine is untouched.
+    (function () {
+      var section = document.getElementById("syncSection");
+      var pill = document.getElementById("syncStatusPill");
+      var text = document.getElementById("syncStatusText");
+      if (!section || !pill || !text) return;
+      function applyFromStatus() {
+        var connected = (text.textContent || "").indexOf("Connected") === 0;
+        section.classList.toggle("collapsed", connected);
+      }
+      pill.addEventListener("click", function () {
+        section.classList.toggle("collapsed");
+      });
+      new MutationObserver(applyFromStatus).observe(text, { childList: true, characterData: true, subtree: true });
+      applyFromStatus();
+    })();
   </script>
 </body>
 </html>

@@ -945,12 +945,9 @@
     }
 
 
-    /* Sync panel auto-collapse (added 2026-11-11): when connected, the
-       passphrase row and hint hide; only the status pill stays visible.
-       Clicking the pill toggles the panel open/closed. */
-    #syncSection.collapsed .sync-controls,
-    #syncSection.collapsed .sync-hint { display: none; }
-    #syncSection .sync-status-pill { cursor: pointer; }
+    /* Sync section lives in a menu (added 2026-11-11, matches the other
+       apps): hidden behind the nav-bar Cloud Sync button. */
+    #syncSection.menu-hidden { display: none; }
     .sync-hint {
       font-family: var(--mono);
       font-size: 0.7rem;
@@ -6016,24 +6013,40 @@
     }
   </script>
 
+
   <script>
-    // Sync panel collapse behavior: collapse when connected, expand when
-    // not, click the status pill to toggle. Visibility only - the sync
-    // engine is untouched.
+    // Sync menu behavior: the sync section is tucked behind a Cloud Sync
+    // button in the nav bar, like the other apps. It starts visible only
+    // when this device has never connected (so setup is findable), and
+    // hides itself as soon as the status reads Connected. The button
+    // toggles it manually. Visibility only - sync engine untouched.
     (function () {
       var section = document.getElementById("syncSection");
-      var pill = document.getElementById("syncStatusPill");
       var text = document.getElementById("syncStatusText");
-      if (!section || !pill || !text) return;
-      function applyFromStatus() {
-        var connected = (text.textContent || "").indexOf("Connected") === 0;
-        section.classList.toggle("collapsed", connected);
+      if (!section || !text) return;
+      var groups = document.querySelectorAll(".nav-bar .nav-group");
+      if (groups.length) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "btn sm";
+        btn.id = "syncMenuBtn";
+        btn.textContent = "Cloud Sync";
+        btn.addEventListener("click", function () {
+          section.classList.toggle("menu-hidden");
+        });
+        groups[groups.length - 1].insertBefore(btn, groups[groups.length - 1].firstChild);
       }
-      pill.addEventListener("click", function () {
-        section.classList.toggle("collapsed");
-      });
-      new MutationObserver(applyFromStatus).observe(text, { childList: true, characterData: true, subtree: true });
-      applyFromStatus();
+      var hasConnection = false;
+      try {
+        var meta = JSON.parse(localStorage.getItem("italian-ops-sync-v1") || "{}");
+        hasConnection = !!meta.hash;
+      } catch (e) {}
+      if (hasConnection) section.classList.add("menu-hidden");
+      new MutationObserver(function () {
+        if ((text.textContent || "").indexOf("Connected") === 0) {
+          section.classList.add("menu-hidden");
+        }
+      }).observe(text, { childList: true, characterData: true, subtree: true });
     })();
   </script>
 </body>
